@@ -1,0 +1,11 @@
+[package]
+name = "aranet-exporter"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+aranet4 = "0.1.0"
+prometheus_exporter = "0.8.5"
+tokio = { version = "1.43.0", features = ["rt-multi-thread"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
