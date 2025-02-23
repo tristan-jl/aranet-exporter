@@ -1,4 +1,6 @@
 {
+  description = "Aranet Prometheus Exporter";
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
@@ -32,20 +34,67 @@
         nativeBuildInputs = with pkgs; [
           pkg-config
         ];
+        pname = "aranet-exporter";
+        description = "Aranet Prometheus Exporter";
+        program = "${self.packages.${system}.default}/bin/${pname}";
       in
-      with pkgs;
       {
-        devShells.default = mkShell {
+        devShells.default = pkgs.mkShell {
           inherit buildInputs nativeBuildInputs;
         };
         packages.default = pkgs.rustPlatform.buildRustPackage {
-          pname = "aranet-exporter";
+          inherit pname;
           version = "0.1.0";
           cargoHash = "sha256-OewEmCmT93V5UrzNPA1C5T/hSrcybOfv6sjH9UccafU=";
           useFetchCargoVendor = true;
           src = ./.;
           inherit buildInputs nativeBuildInputs;
         };
+        apps.default = {
+          type = "app";
+          inherit program;
+        };
+        nixosModules.default =
+          {
+            config,
+            lib,
+            ...
+          }:
+          {
+            options.services.${pname} = {
+              enable = lib.mkEnableOption description;
+
+              addr = lib.mkOption {
+                type = lib.types.str;
+                default = "";
+                description = "Aranet sensor address";
+              };
+
+              port = lib.mkOption {
+                type = lib.types.port;
+                default = 9186;
+                description = "Port to listen on";
+              };
+            };
+
+            config = lib.mkIf config.services.${pname}.enable {
+              systemd.services.${pname} = {
+                inherit description;
+                wantedBy = [ "multi-user.target" ];
+                after = [ "network.target" ];
+                serviceConfig = {
+                  ExecStart = program;
+                  Restart = "always";
+                  Type = "simple";
+                  DynamicUser = "yes";
+                };
+                environment = {
+                  ARANET_ADDR = toString config.services.${pname}.addr;
+                  PORT = toString config.services.${pname}.port;
+                };
+              };
+            };
+          };
       }
     );
 }
