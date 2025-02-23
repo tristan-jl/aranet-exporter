@@ -25,12 +25,12 @@
           inherit system overlays;
         };
         rustToolchain = pkgs.pkgsBuildHost.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
-        buildInputs = [
+        buildInputs = with pkgs; [
           rustToolchain
+          dbus
         ];
         nativeBuildInputs = with pkgs; [
           pkg-config
-          dbus
         ];
       in
       with pkgs;
@@ -41,8 +41,9 @@
         packages.default = pkgs.rustPlatform.buildRustPackage {
           pname = "aranet-exporter";
           version = "0.1.0";
-          cargoHash = "";
+          cargoHash = "sha256-OewEmCmT93V5UrzNPA1C5T/hSrcybOfv6sjH9UccafU=";
           useFetchCargoVendor = true;
+          src = ./.;
           inherit buildInputs nativeBuildInputs;
         };
       }

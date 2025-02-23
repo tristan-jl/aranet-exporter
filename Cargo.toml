@@ -1,7 +1,7 @@
 [package]
 name = "aranet-exporter"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
 aranet4 = "0.1.0"
