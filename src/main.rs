@@ -48,15 +48,20 @@ async fn main() {
             // Will block until duration is elapsed.
             let _guard = exporter.wait_request();
 
-            if let Ok(sr) = sensor.read_current_values().await {
-                tracing::info!("Updating metrics");
-                co2_ppm.set(sr.co2_level.into());
-                temp_c.set(sr.temperature.into());
-                humidity_pc.set(sr.humidity.into());
-                pressure_hpa.set(sr.pressure.into());
-                battery_pc.set(sr.battery.into());
-            } else {
-                tracing::error!("Failed to read Aranet sensor");
+            let res = sensor.read_current_values().await;
+
+            match res {
+                Ok(sr) => {
+                    tracing::info!("Updating metrics");
+                    co2_ppm.set(sr.co2_level.into());
+                    temp_c.set(sr.temperature.into());
+                    humidity_pc.set(sr.humidity.into());
+                    pressure_hpa.set(sr.pressure.into());
+                    battery_pc.set(sr.battery.into());
+                }
+                Err(e) => {
+                    tracing::error!("Failed to read Aranet sensor: {e}");
+                }
             }
         }
     }
