@@ -8,7 +8,6 @@
       url = "github:oxalica/rust-overlay";
       inputs = {
         nixpkgs.follows = "nixpkgs";
-        flake-utils.follows = "flake-utils";
       };
     };
   };
@@ -19,7 +18,7 @@
       flake-utils,
       rust-overlay,
     }:
-    flake-utils.lib.eachDefaultSystem (
+    (flake-utils.lib.eachDefaultSystem (
       system:
       let
         overlays = [ (import rust-overlay) ];
@@ -35,7 +34,6 @@
           pkg-config
         ];
         pname = "aranet-exporter";
-        description = "Aranet Prometheus Exporter";
         program = "${self.packages.${system}.default}/bin/${pname}";
       in
       {
@@ -54,47 +52,55 @@
           type = "app";
           inherit program;
         };
-        nixosModules.default =
-          {
-            config,
-            lib,
-            ...
-          }:
-          {
-            options.services.${pname} = {
-              enable = lib.mkEnableOption description;
+      }
+    ))
+    // {
+      nixosModules.default =
+        {
+          config,
+          lib,
+          pkgs,
+          ...
+        }:
+        let
+          pname = "aranet-exporter";
+          description = "Aranet Prometheus Exporter";
+        in
+        {
+          options.services.${pname} = {
+            enable = lib.mkEnableOption description;
 
-              addr = lib.mkOption {
-                type = lib.types.str;
-                default = "";
-                description = "Aranet sensor address";
-              };
-
-              port = lib.mkOption {
-                type = lib.types.port;
-                default = 9186;
-                description = "Port to listen on";
-              };
+            addr = lib.mkOption {
+              type = lib.types.str;
+              default = "";
+              description = "Aranet sensor address";
             };
 
-            config = lib.mkIf config.services.${pname}.enable {
-              systemd.services.${pname} = {
-                inherit description;
-                wantedBy = [ "multi-user.target" ];
-                after = [ "network.target" ];
-                serviceConfig = {
-                  ExecStart = program;
-                  Restart = "always";
-                  Type = "simple";
-                  DynamicUser = "yes";
-                };
-                environment = {
-                  ARANET_ADDR = toString config.services.${pname}.addr;
-                  PORT = toString config.services.${pname}.port;
-                };
+            port = lib.mkOption {
+              type = lib.types.port;
+              default = 9186;
+              description = "Port to listen on";
+            };
+          };
+
+          config = lib.mkIf config.services.${pname}.enable {
+            systemd.services.${pname} = {
+              inherit description;
+              wantedBy = [ "multi-user.target" ];
+              after = [ "network.target" ];
+              serviceConfig = {
+                # ExecStart = "${pkgs.${pname}}/bin/${pname}";
+                ExecStart = "${self.packages.${pkgs.system}.default}/bin/${pname}";
+                Restart = "always";
+                Type = "simple";
+                DynamicUser = "yes";
+              };
+              environment = {
+                ARANET_ADDR = toString config.services.${pname}.addr;
+                PORT = toString config.services.${pname}.port;
               };
             };
           };
-      }
-    );
+        };
+    };
 }
