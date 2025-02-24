@@ -54,7 +54,8 @@ async fn main() {
                 Ok(sr) => {
                     tracing::info!("Updating metrics");
                     co2_ppm.set(sr.co2_level.into());
-                    temp_c.set(sr.temperature.into());
+                    // temp reading is in fahrenheit for some reason
+                    temp_c.set(((sr.temperature - 32.0) * 5.0 / 9.0).into());
                     humidity_pc.set(sr.humidity.into());
                     pressure_hpa.set(sr.pressure.into());
                     battery_pc.set(sr.battery.into());
