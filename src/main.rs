@@ -20,7 +20,9 @@ async fn main() {
 
     tracing::info!("Starting exporter at: {addr}");
 
-    let sensor_addr = env::var("ARANET_ADDR").ok();
+    let mut sensor_addr = env::var("ARANET_ADDR").ok();
+    sensor_addr = sensor_addr.and_then(|i| if i.len() > 0 { Some(i) } else { None });
+
     let sensor = SensorManager::init(sensor_addr)
         .await
         .expect("Unable to find Aranet sensor");
